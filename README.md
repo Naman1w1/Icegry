@@ -30,3 +30,13 @@ Then open [http://localhost:5173](http://localhost:5173) in your browser.
   - `assets/` — Brand assets & logos
   - `serve.py` — Local HTTP development server
 - `package.json` — Project configuration and run scripts
+
+## ☁️ Deploy to Vercel
+
+This repository is preconfigured for **zero-config instant deployment** on [Vercel](https://vercel.com):
+
+1. Go to [vercel.com/new](https://vercel.com/new).
+2. Import this repository: `https://github.com/Naman1w1/Icegry`.
+3. Keep default settings (`vercel.json` automatically configures the output directory and asset headers).
+4. Click **Deploy**.
+
