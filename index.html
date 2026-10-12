@@ -2,14 +2,28 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta http-equiv="refresh" content="0; url=clone/" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Icegry – Premium Streetwear</title>
-    <script>
-      window.location.replace("clone/");
-    </script>
+    <link rel="icon" type="image/png" href="assets/logo.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Anton&family=Assistant:wght@300;400;500;600;700;800&family=Great+Vibes&family=Pinyon+Script&family=Playball&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/styles.css?v=2.1.0" />
+    <link rel="stylesheet" href="css/motion.css?v=2.1.0" />
   </head>
   <body>
-    <p>Redirecting to <a href="clone/">Icegry Storefront</a>...</p>
+    <div id="scrollProgressBar" class="scroll-progress-indicator" aria-hidden="true"></div>
+    <a class="skip" href="#app">Skip to content</a>
+    <div id="root">
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;color:#121212;">
+        <img src="assets/logo.png" alt="Icegry" style="height:54px;width:auto;margin-bottom:14px;display:block;" />
+        <p style="font-size:12px;color:#777;letter-spacing:0.08em;font-weight:500;">LOADING STOREFRONT...</p>
+      </div>
+    </div>
+    <script src="js/lenis.min.js?v=2.1.0"></script>
+    <script type="module" src="js/app.js?v=2.1.0"></script>
   </body>
 </html>
