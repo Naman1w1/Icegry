@@ -389,6 +389,9 @@ function header() {
       ${store.ui.stories ? storyViewer() : ""}
       ${store.ui.quickAddProduct ? quickAddModal() : ""}
       ${mobileBottomNav()}
+      <button id="smoothTopBtn" class="smooth-top-btn" aria-label="Scroll to top" title="Back to top">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(-90deg); display:block;"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
       ${store.ui.toast ? `<div class="toast-popup">${store.ui.toast}</div>` : ""}
     </div>
   `;
@@ -441,7 +444,7 @@ function filtersDrawer() {
         <button class="filters-close" data-close-filters aria-label="Close filters">${icons.close}</button>
       </div>
 
-      <div class="filters-drawer-body">
+      <div class="filters-drawer-body" data-lenis-prevent>
         <section class="filter-group">
           <h3 class="filter-group-title">Size</h3>
           <div class="filter-check-grid">
@@ -507,7 +510,7 @@ function megaDrawer() {
 
   return `
     <div class="drawer-overlay active" data-close-mega></div>
-    <div class="mega-drawer">
+    <div class="mega-drawer" data-lenis-prevent>
       <div class="mega-drawer-inner">
         <div class="mega-col">
           <h4 class="mega-col-title">Collections</h4>
@@ -575,7 +578,7 @@ function searchDrawer() {
 
   return `
     <div class="drawer-overlay active" data-close-search></div>
-    <div class="search-drawer">
+    <div class="search-drawer" data-lenis-prevent>
       <div class="search-header">
         <div class="search-input-wrap">
           <span class="search-icon">${icons.search}</span>
@@ -667,7 +670,7 @@ function cartDrawer() {
         </div>
       </div>
 
-      <div class="cart-drawer-body">
+      <div class="cart-drawer-body" data-lenis-prevent>
         ${
           count === 0
             ? `
@@ -761,7 +764,7 @@ function quickAddModal() {
 
   return `
     <div class="drawer-overlay active" data-close-quick-add></div>
-    <div class="quick-add-modal">
+    <div class="quick-add-modal" data-lenis-prevent>
       <button class="modal-close-btn" data-close-quick-add aria-label="Close">
         ${icons.close}
       </button>
@@ -797,7 +800,7 @@ function storyViewer() {
 
   return `
     <div class="story-overlay" data-close-story>
-      <div class="story-container" onclick="event.stopPropagation()">
+      <div class="story-container" data-lenis-prevent onclick="event.stopPropagation()">
         <!-- Progress bars -->
         <div class="story-progress-bars">
           ${storySlides
@@ -891,7 +894,7 @@ function chatDrawer() {
         </div>
         <button class="cart-close-btn" data-close-chat aria-label="Close chat">${icons.close}</button>
       </div>
-      <div class="chat-drawer-body">
+      <div class="chat-drawer-body" data-lenis-prevent>
         <div class="chat-bubble bot">Hi — welcome to ICEGRY. How can we help?</div>
         <a class="chat-action" href="https://wa.me/919599191998" target="_blank" rel="noopener">
           ${icons.whatsapp} Chat on WhatsApp
@@ -1581,6 +1584,9 @@ function render() {
         ${store.ui.stories ? storyViewer() : ""}
         ${store.ui.quickAddProduct ? quickAddModal() : ""}
         ${mobileBottomNav()}
+        <button id="smoothTopBtn" class="smooth-top-btn" aria-label="Scroll to top" title="Back to top">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(-90deg); display:block;"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
         ${store.ui.toast ? `<div class="toast-popup">${store.ui.toast}</div>` : ""}
       `;
     }
@@ -1590,6 +1596,29 @@ function render() {
 
     const footerEl = document.getElementById("footer-container");
     if (footerEl) footerEl.innerHTML = footer();
+  }
+
+  // Synchronize Lenis scroll locking with active drawers & modals
+  const isAnyDrawerOpen = Boolean(
+    store.ui.mega ||
+    store.ui.menu ||
+    store.ui.search ||
+    store.ui.filters ||
+    store.ui.cart ||
+    store.ui.chat ||
+    store.ui.stories ||
+    store.ui.quickAddProduct
+  );
+
+  if (window.lenis) {
+    if (isAnyDrawerOpen) {
+      window.lenis.stop();
+    } else {
+      window.lenis.start();
+    }
+    requestAnimationFrame(() => {
+      window.lenis?.resize();
+    });
   }
 
   bindEvents();
@@ -1938,6 +1967,18 @@ function bindEvents() {
     };
   });
 
+  // Smooth Back to Top Button
+  const topBtn = document.getElementById("smoothTopBtn");
+  if (topBtn) {
+    topBtn.onclick = () => {
+      if (window.lenis) {
+        window.lenis.scrollTo(0, { duration: 1.2 });
+      } else {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    };
+  }
+
   // Sticky filter bar shadow when pinned (Latest Drop / New In)
   if (window.__stickyFilterScroll) {
     window.removeEventListener("scroll", window.__stickyFilterScroll);
@@ -1960,7 +2001,7 @@ function bindEvents() {
     window.__glassHeaderScroll = null;
   }
   const syncGlassHeader = () => {
-    const isScrolled = window.scrollY > 15;
+    const isScrolled = (window.lenis ? window.lenis.scroll : window.scrollY) > 15;
     const desktopHeader = getRoot().querySelector(".main-header");
     const mobileHeader = getRoot().querySelector(".float-top-nav");
     if (desktopHeader) desktopHeader.classList.toggle("is-scrolled", isScrolled);
@@ -1969,6 +2010,96 @@ function bindEvents() {
   window.__glassHeaderScroll = syncGlassHeader;
   syncGlassHeader();
   window.addEventListener("scroll", syncGlassHeader, { passive: true });
+}
+
+// ============================================================
+// BLUORNG-STYLE SMOOTH SCROLL ENGINE (LENIS)
+// ============================================================
+let lenis = null;
+
+function initSmoothScroll() {
+  if (typeof window.Lenis === "undefined") {
+    console.warn("Lenis smooth scroll library not found.");
+    return null;
+  }
+
+  if (window.__icegryLenis) {
+    try {
+      window.__icegryLenis.destroy();
+    } catch (e) {}
+  }
+
+  // Exact physics parameters analyzed from bluorng.com
+  lenis = new window.Lenis({
+    duration: 1.2,
+    easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // Exponential deceleration
+    orientation: "vertical",
+    gestureOrientation: "vertical",
+    smoothWheel: true,
+    wheelMultiplier: 1.0,
+    touchMultiplier: 1.8,
+    smoothTouch: false, // Keep snappy natural touch gestures on mobile devices
+    infinite: false,
+    autoRaf: false,
+  });
+
+  window.__icegryLenis = lenis;
+  window.lenis = lenis;
+
+  // Optimized RAF loop
+  function raf(time) {
+    if (lenis) {
+      lenis.raf(time);
+    }
+    requestAnimationFrame(raf);
+  }
+  requestAnimationFrame(raf);
+
+  // Synchronized scroll listeners
+  lenis.on("scroll", (e) => {
+    // 1. Sync header liquid blur
+    const isScrolled = e.scroll > 15;
+    const desktopHeader = getRoot().querySelector(".main-header");
+    const mobileHeader = getRoot().querySelector(".float-top-nav");
+    if (desktopHeader) desktopHeader.classList.toggle("is-scrolled", isScrolled);
+    if (mobileHeader) mobileHeader.classList.toggle("is-scrolled", isScrolled);
+
+    // 2. Sync sticky filters bar
+    const stickyBar = getRoot().querySelector("[data-sticky-filters]");
+    if (stickyBar) {
+      const top = parseFloat(getComputedStyle(stickyBar).top) || 0;
+      stickyBar.classList.toggle("is-stuck", stickyBar.getBoundingClientRect().top <= top + 1);
+    }
+
+    // 3. Sync scroll progress indicator bar (luxury header bar)
+    const progressBar = document.getElementById("scrollProgressBar");
+    if (progressBar) {
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+      const pct = maxScroll > 0 ? (e.scroll / maxScroll) * 100 : 0;
+      progressBar.style.width = `${Math.min(100, Math.max(0, pct))}%`;
+    }
+
+    // 4. Back to top button visibility
+    const topBtn = document.getElementById("smoothTopBtn");
+    if (topBtn) {
+      topBtn.classList.toggle("visible", e.scroll > 400);
+    }
+  });
+
+  // Smooth anchor scrolling (Skip to content, in-page links)
+  document.addEventListener("click", (e) => {
+    const anchor = e.target.closest('a[href^="#"]');
+    if (!anchor) return;
+    const href = anchor.getAttribute("href");
+    if (!href || href === "#" || href.startsWith("#/")) return;
+    const target = document.querySelector(href);
+    if (target && lenis) {
+      e.preventDefault();
+      lenis.scrollTo(target, { offset: -70, duration: 1.2 });
+    }
+  });
+
+  return lenis;
 }
 
 // Initial bootstrap
@@ -1980,9 +2111,14 @@ window.addEventListener("hashchange", () => {
   if (p.includes("/collection/new-in") || p.includes("/collection/latest-drop")) {
     store.ui.chip = "view-all";
   }
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  if (window.lenis) {
+    window.lenis.scrollTo(0, { immediate: true });
+  } else {
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }
   render();
 });
 
+initSmoothScroll();
 startHeroAutoPlay();
 render();

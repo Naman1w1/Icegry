@@ -1,8 +1,81 @@
 /* Luxury Streetwear Smooth Motion & Micro-interactions */
 
-html {
-  scroll-behavior: smooth;
+/* ============================================================
+   BLUORNG-INSPIRED LENIS SMOOTH SCROLL ENGINE
+   ============================================================ */
+html.lenis, html.lenis body {
+  height: auto;
 }
+
+html.lenis {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden !important;
+}
+
+.lenis.lenis-scrolling iframe {
+  pointer-events: none;
+}
+
+/* Subtle luxury scroll progress bar on top */
+.scroll-progress-indicator {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 2.5px;
+  width: 0%;
+  background: #121212;
+  z-index: 9999;
+  pointer-events: none;
+  transition: width 0.05s linear;
+}
+
+/* Back to top smooth floating button */
+.smooth-top-btn {
+  position: fixed;
+  bottom: 84px;
+  right: 20px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(18, 18, 18, 0.88);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  z-index: 60;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px);
+  transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease;
+}
+
+.smooth-top-btn.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.smooth-top-btn:hover {
+  background: #000000;
+  transform: translateY(-2px);
+}
+
 
 @keyframes fadeIn {
   from {
