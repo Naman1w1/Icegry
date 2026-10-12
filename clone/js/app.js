@@ -48,6 +48,9 @@ const store = {
     storyPlaying: true,
     quickAddProduct: null,
     pdpProduct: null,
+    pdpSize: "XXXS",
+    pdpTab: "details",
+    sizeGuide: false,
     query: "",
     heroIdx: 0,
     toast: null,
@@ -388,6 +391,7 @@ function header() {
       ${store.ui.chat ? chatDrawer() : ""}
       ${store.ui.stories ? storyViewer() : ""}
       ${store.ui.quickAddProduct ? quickAddModal() : ""}
+      ${store.ui.sizeGuide ? sizeGuideModal() : ""}
       ${mobileBottomNav()}
       <button id="smoothTopBtn" class="smooth-top-btn" aria-label="Scroll to top" title="Back to top">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(-90deg); display:block;"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
@@ -793,6 +797,49 @@ function quickAddModal() {
   `;
 }
 
+// SIZE GUIDE MODAL COMPONENT (Bluorng Style)
+function sizeGuideModal() {
+  if (!store.ui.sizeGuide) return "";
+
+  return `
+    <div class="drawer-overlay active" data-close-size-guide></div>
+    <div class="size-guide-modal" data-lenis-prevent>
+      <div class="size-guide-head">
+        <h3>Size Guide (Inches)</h3>
+        <button class="size-guide-close" data-close-size-guide aria-label="Close size guide">
+          ${icons.close}
+        </button>
+      </div>
+      <div class="size-guide-body">
+        <table class="size-guide-table">
+          <thead>
+            <tr>
+              <th>Size</th>
+              <th>Chest</th>
+              <th>Length</th>
+              <th>Shoulder</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>XXXS</strong></td><td>38"</td><td>26.5"</td><td>18"</td></tr>
+            <tr><td><strong>XXS</strong></td><td>40"</td><td>27.0"</td><td>19"</td></tr>
+            <tr><td><strong>XS</strong></td><td>42"</td><td>27.5"</td><td>20"</td></tr>
+            <tr><td><strong>S</strong></td><td>44"</td><td>28.0"</td><td>21"</td></tr>
+            <tr><td><strong>M</strong></td><td>46"</td><td>28.5"</td><td>22"</td></tr>
+            <tr><td><strong>L</strong></td><td>48"</td><td>29.0"</td><td>23"</td></tr>
+            <tr><td><strong>XL</strong></td><td>50"</td><td>29.5"</td><td>24"</td></tr>
+            <tr><td><strong>XXL</strong></td><td>52"</td><td>30.0"</td><td>25"</td></tr>
+            <tr><td><strong>XXXL</strong></td><td>54"</td><td>30.5"</td><td>26"</td></tr>
+          </tbody>
+        </table>
+        <p class="size-guide-note">
+          * All dimensions are garment measurements in inches. ICEGRY garments feature an intentional boxy, drop-shoulder streetwear fit. For a standard tailored look, choose one size down.
+        </p>
+      </div>
+    </div>
+  `;
+}
+
 // STORY VIEWER COMPONENT
 function storyViewer() {
   const s = storySlides[store.ui.storyIdx];
@@ -1189,91 +1236,189 @@ function collectionPage(slug) {
   `;
 }
 
-// PRODUCT DETAIL PAGE VIEW
+// PRODUCT DETAIL PAGE VIEW (Bluorng Mobile UI)
 function productPage(id) {
   const p = byId(id);
+  if (!p) {
+    return `
+      <div class="page-container pdp-page">
+        <div class="pdp-not-found" style="text-align:center;padding:80px 20px;">
+          <h2>Product Not Found</h2>
+          <p style="margin:12px 0 24px;color:#777;">The drop you are looking for is no longer available.</p>
+          <a class="btn-shop-now" href="#/collection/all-products">Explore All Drops</a>
+        </div>
+      </div>
+    `;
+  }
+
   const saved = wished(p.id);
   const isSale = p.compare && p.compare > p.price;
+  const currentSize = store.ui.pdpSize || p.sizes[0] || "XXXS";
+  const activeTab = store.ui.pdpTab || "details";
+
+  // Category breadcrumb label
+  const catLabel = p.cats && p.cats.length > 0 ? p.cats[0].replace(/-/g, " ").toUpperCase() : "BEST SELLER";
 
   return `
     <div class="pdp-page page-container">
+      <!-- Breadcrumb Navigation (Screenshot 3: Home > BEST SELLER > Product) -->
+      <nav class="pdp-breadcrumb" aria-label="Breadcrumb">
+        <a href="#/">Home</a>
+        <span class="bc-sep">&gt;</span>
+        <a href="#/collection/all-products">${catLabel}</a>
+        <span class="bc-sep">&gt;</span>
+        <span class="bc-curr">${p.name}</span>
+      </nav>
+
       <div class="pdp-layout">
-        <!-- Gallery -->
-        <div class="pdp-gallery">
+        <!-- Mobile Full-Width Swipeable Hero Carousel (Screenshots 2 & 3) -->
+        <div class="pdp-mobile-gallery-wrap">
+          <div class="pdp-mobile-carousel" id="pdpMobileCarousel" data-lenis-prevent>
+            ${p.images
+              .map(
+                (img, idx) => `
+              <div class="pdp-mobile-slide" data-slide-index="${idx}">
+                <img src="${img}" alt="${p.name} view ${idx + 1}" loading="${idx === 0 ? "eager" : "lazy"}" />
+              </div>
+            `
+              )
+              .join("")}
+          </div>
+          <!-- Counter badge on bottom-left e.g. '3 / 11' -->
+          <div class="pdp-gallery-counter" id="pdpGalleryCounter">1 / ${p.images.length}</div>
+        </div>
+
+        <!-- Desktop 2-Column Gallery Grid -->
+        <div class="pdp-desktop-gallery">
           ${p.images
             .map(
               (img, idx) => `
             <div class="pdp-img-frame">
-              <img src="${img}" alt="${p.name} angle ${idx + 1}" />
+              <img src="${img}" alt="${p.name} view ${idx + 1}" loading="${idx < 2 ? "eager" : "lazy"}" />
             </div>
           `
             )
             .join("")}
         </div>
 
-        <!-- Info Column -->
+        <!-- Product Information Card -->
         <div class="pdp-info-sidebar">
-          <div class="breadcrumb">
-            <a href="#/">Home</a> / <a href="#/collection/all-products">Shop</a> / <span>${p.name}</span>
-          </div>
+          <div class="pdp-white-card">
+            <!-- Header Row: Title with Inline Wishlist Bookmark & Price on left | Size Guide pill on right -->
+            <div class="pdp-card-head">
+              <div class="pdp-head-left">
+                <div class="pdp-title-row">
+                  <h1 class="pdp-title">${p.name}</h1>
+                  <button class="pdp-title-wish ${saved ? "saved" : ""}" data-wish="${p.id}" aria-label="Save to wishlist" title="Save to wishlist">
+                    ${saved ? icons.bookmarkFill : icons.bookmark}
+                  </button>
+                </div>
+                <div class="pdp-price-row">
+                  <span class="pdp-price">${money(p.price)}</span>
+                  ${isSale ? `<span class="price-was">${money(p.compare)}</span>` : ""}
+                </div>
+              </div>
 
-          <h1 class="pdp-title">${p.name}</h1>
-          <div class="pdp-price-wrap">
-            ${isSale ? `<span class="price-was">${money(p.compare)}</span>` : ""}
-            <span class="pdp-price-current">${money(p.price)}</span>
-            ${isSale ? `<span class="badge-tag sale">Sale</span>` : ""}
-          </div>
-          <p class="tax-inclusive-tag">Taxes included. Free shipping across India.</p>
-
-          <!-- Size selector -->
-          <div class="size-selection-section">
-            <div class="size-label-row">
-              <span class="size-label-title">Select Size</span>
-              <span class="size-guide-link">Size Guide</span>
-            </div>
-            <div class="pdp-sizes-grid">
-              ${p.sizes
-                .map(
-                  (size, idx) => `
-                <button class="pdp-size-btn ${idx === 3 ? "selected" : ""}" data-pdp-size="${size}">
-                  ${size}
+              <div class="pdp-head-right">
+                <button class="btn-size-guide-pill" data-open-size-guide type="button">
+                  Size Guide
                 </button>
-              `
-                )
-                .join("")}
+              </div>
             </div>
-          </div>
 
-          <!-- Add to Bag and Wishlist buttons -->
-          <div class="pdp-actions-row">
-            <button class="btn-pdp-add" data-pdp-add-to-bag="${p.id}">
-              ADD TO BAG &bull; ${money(p.price)}
-            </button>
-            <button class="btn-pdp-wish ${saved ? "saved" : ""}" data-wish="${p.id}" title="Wishlist">
-              ${saved ? icons.bookmarkFill : icons.bookmark}
-            </button>
-          </div>
+            <!-- Size Selector: 2 Rows of Rounded Pills (Row 1: 5 pills, Row 2: 4 pills) -->
+            <div class="pdp-size-selector">
+              <div class="pdp-size-row row-5">
+                ${p.sizes.slice(0, 5).map((size) => `
+                  <button class="pdp-size-btn ${currentSize === size ? "selected" : ""}" data-pdp-size="${size}" type="button">
+                    ${size}
+                  </button>
+                `).join("")}
+              </div>
+              <div class="pdp-size-row row-4">
+                ${p.sizes.slice(5).map((size) => `
+                  <button class="pdp-size-btn ${currentSize === size ? "selected" : ""}" data-pdp-size="${size}" type="button">
+                    ${size}
+                  </button>
+                `).join("")}
+              </div>
+            </div>
 
-          <!-- Fabric and product specs -->
-          <div class="pdp-specs-box">
-            <h4>Product Specifications</h4>
-            <ul>
-              ${p.details.map((d) => `<li>${d}</li>`).join("")}
-            </ul>
-          </div>
+            <!-- Action Buttons: White ADD TO BAG pill + Black BUY NOW pill -->
+            <div class="pdp-cta-group">
+              <button class="btn-pdp-add-bag" data-pdp-add-to-bag="${p.id}" type="button">
+                ADD TO BAG
+              </button>
+              <button class="btn-pdp-buy-now" data-pdp-buy-now="${p.id}" type="button">
+                BUY NOW
+              </button>
+            </div>
 
-          <div class="pdp-description">
-            <h4>Description</h4>
-            <p>${p.description}</p>
+            <!-- Segmented Tabs Section (Screenshot 2: Details & Description | Washcare | Shipping) -->
+            <div class="pdp-tabs-container">
+              <div class="pdp-tab-nav">
+                <button class="pdp-tab-nav-btn ${activeTab === "details" ? "active" : ""}" data-pdp-tab="details" type="button">
+                  Details &amp; Description
+                </button>
+                <button class="pdp-tab-nav-btn ${activeTab === "washcare" ? "active" : ""}" data-pdp-tab="washcare" type="button">
+                  Washcare
+                </button>
+                <button class="pdp-tab-nav-btn ${activeTab === "shipping" ? "active" : ""}" data-pdp-tab="shipping" type="button">
+                  Shipping
+                </button>
+              </div>
+
+              <div class="pdp-tab-body">
+                ${
+                  activeTab === "washcare"
+                    ? `
+                  <div class="pdp-tab-pane">
+                    <h4 class="pdp-block-title">Wash &amp; Care Guide</h4>
+                    <ul class="pdp-bullet-list">
+                      <li>Machine wash cold inside-out on gentle cycle</li>
+                      <li>Use mild liquid detergent; do not use fabric softeners</li>
+                      <li>Do not bleach or tumble dry</li>
+                      <li>Dry flat in shade away from direct sunlight</li>
+                      <li>Warm iron on reverse; do not iron directly over graphics</li>
+                    </ul>
+                  </div>
+                `
+                    : activeTab === "shipping"
+                    ? `
+                  <div class="pdp-tab-pane">
+                    <h4 class="pdp-block-title">Shipping &amp; Delivery</h4>
+                    <ul class="pdp-bullet-list">
+                      <li><strong>Free Express Shipping:</strong> Available on all prepaid orders across India</li>
+                      <li><strong>Dispatch:</strong> Dispatched in 24–48 hours from our central warehouse</li>
+                      <li><strong>Delivery Timeline:</strong> 2–4 business days for metros, 3–6 days all-India</li>
+                      <li><strong>Exchanges:</strong> Easy 7-day doorstep size exchange policy</li>
+                    </ul>
+                  </div>
+                `
+                    : `
+                  <div class="pdp-tab-pane">
+                    <h4 class="pdp-block-title">Details</h4>
+                    <ul class="pdp-bullet-list">
+                      ${p.details.map((d) => `<li>${d}</li>`).join("")}
+                    </ul>
+
+                    <h4 class="pdp-block-title" style="margin-top: 18px;">Description</h4>
+                    <p class="pdp-desc-paragraph">${p.description}</p>
+                    <p class="pdp-model-stat"><strong>model measurements - is 6' and wears a size l.</strong></p>
+                  </div>
+                `
+                }
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Related Products -->
+      <!-- Related Drops (2-column on mobile, 4-column on desktop) -->
       <section class="related-section">
         <h2 class="section-title">You may also like</h2>
-        <div class="products-grid-4">
-          ${products.slice(0, 4).map((item) => card(item)).join("")}
+        <div class="products-grid-related">
+          ${products.filter((item) => item.id !== p.id).slice(0, 4).map((item) => card(item)).join("")}
         </div>
       </section>
     </div>
@@ -1583,6 +1728,7 @@ function render() {
         ${store.ui.chat ? chatDrawer() : ""}
         ${store.ui.stories ? storyViewer() : ""}
         ${store.ui.quickAddProduct ? quickAddModal() : ""}
+        ${store.ui.sizeGuide ? sizeGuideModal() : ""}
         ${mobileBottomNav()}
         <button id="smoothTopBtn" class="smooth-top-btn" aria-label="Scroll to top" title="Back to top">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(-90deg); display:block;"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
@@ -1607,7 +1753,8 @@ function render() {
     store.ui.cart ||
     store.ui.chat ||
     store.ui.stories ||
-    store.ui.quickAddProduct
+    store.ui.quickAddProduct ||
+    store.ui.sizeGuide
   );
 
   if (window.lenis) {
@@ -1788,23 +1935,76 @@ function bindEvents() {
     };
   });
 
-  // PDP size select and add to bag
-  let selectedPdpSize = "M";
+  // PDP Carousel swipe & index counter synchronization
+  const pdpCarousel = document.getElementById("pdpMobileCarousel");
+  const pdpCounter = document.getElementById("pdpGalleryCounter");
+  if (pdpCarousel && pdpCounter) {
+    const onScroll = () => {
+      const w = pdpCarousel.clientWidth;
+      if (w > 0) {
+        const total = pdpCarousel.children.length || 1;
+        const idx = Math.min(total - 1, Math.max(0, Math.round(pdpCarousel.scrollLeft / w)));
+        pdpCounter.textContent = `${idx + 1} / ${total}`;
+      }
+    };
+    pdpCarousel.addEventListener("scroll", onScroll, { passive: true });
+  }
+
+  // PDP size selector
   getRoot().querySelectorAll("[data-pdp-size]").forEach((btn) => {
     btn.onclick = () => {
-      getRoot().querySelectorAll("[data-pdp-size]").forEach((b) => b.classList.remove("selected"));
-      btn.classList.add("selected");
-      selectedPdpSize = btn.dataset.pdpSize;
+      store.ui.pdpSize = btn.dataset.pdpSize;
+      getRoot().querySelectorAll("[data-pdp-size]").forEach((b) => {
+        b.classList.toggle("selected", b.dataset.pdpSize === store.ui.pdpSize);
+      });
     };
   });
 
+  // PDP Add To Bag
   const pdpAddBtn = getRoot().querySelector("[data-pdp-add-to-bag]");
   if (pdpAddBtn) {
     pdpAddBtn.onclick = (e) => {
       const id = pdpAddBtn.dataset.pdpAddToBag;
-      addToBag(id, selectedPdpSize, e);
+      const size = store.ui.pdpSize || "XXXS";
+      addToBag(id, size, e);
     };
   }
+
+  // PDP Buy Now (Add to bag + immediate checkout cart open)
+  const pdpBuyBtn = getRoot().querySelector("[data-pdp-buy-now]");
+  if (pdpBuyBtn) {
+    pdpBuyBtn.onclick = (e) => {
+      const id = pdpBuyBtn.dataset.pdpBuyNow;
+      const size = store.ui.pdpSize || "XXXS";
+      addToBag(id, size, e);
+      store.ui.cart = true;
+      render();
+    };
+  }
+
+  // PDP Tabs (Details & Description / Washcare / Shipping)
+  getRoot().querySelectorAll("[data-pdp-tab]").forEach((btn) => {
+    btn.onclick = () => {
+      store.ui.pdpTab = btn.dataset.pdpTab;
+      render();
+    };
+  });
+
+  // Size Guide Modal Open / Close
+  const openSizeGuideBtn = getRoot().querySelector("[data-open-size-guide]");
+  if (openSizeGuideBtn) {
+    openSizeGuideBtn.onclick = () => {
+      store.ui.sizeGuide = true;
+      render();
+    };
+  }
+
+  getRoot().querySelectorAll("[data-close-size-guide]").forEach((el) => {
+    el.onclick = () => {
+      store.ui.sizeGuide = false;
+      render();
+    };
+  });
 
   // Stories
   getRoot().querySelectorAll("[data-open-story]").forEach((btn) => {
