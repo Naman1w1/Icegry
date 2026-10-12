@@ -1,0 +1,14 @@
+{
+  "name": "icegry-storefront",
+  "version": "1.0.0",
+  "description": "Streetwear NEW IN UI clone",
+  "scripts": {
+    "dev": "python clone/serve.py",
+    "start": "python clone/serve.py",
+    "serve": "python clone/serve.py",
+    "build": "node -e \"console.log('Static site: No compilation step needed. Files are in clone/')\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
